@@ -1,0 +1,78 @@
+﻿@page "/registration"
+@using LibrarySystem.Models
+@inject NavigationManager navigationManager
+@inject LibrarySystem.Models.UserService userService
+
+<style>
+    body {
+        background-color: lightgray; /* Set the background color to skyblue */
+    }
+
+    .login-container {
+        max-width: 400px;
+        margin: auto;
+        padding: 15px;
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        background-color: #ffffff; /* Set the background color of the login container to white */
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h3 class="text-center">Registration</h3>
+
+            <!-- Form for user registration -->
+            <EditForm Model="@user" OnValidSubmit="Registre">
+                <DataAnnotationsValidator />
+                <!-- First Name input field -->
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input class="form-control" @bind-value="@user.FirstName" placeholder="Enter First Name">
+                    <ValidationMessage For="@(()=> user.FirstName)" />
+                </div>
+                <!-- Last Name input field -->
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input class="form-control" @bind-value="@user.LastName" placeholder="Enter Last Name">
+                    <ValidationMessage For="@(()=> user.LastName)" />
+                </div>
+                <!-- Email input field -->
+                <div class="form-group">
+                    <label>Email address</label>
+                    <input type="email" @bind-value="@user.Email" class="form-control" placeholder="Enter email">
+                    <ValidationMessage For="@(()=> user.Email)" />
+                </div>
+                <!-- Password input field -->
+                <div class="mt-2 form-group">
+                    <label>Password</label>
+                    <input type="password" @bind-value="@user.Password" class="form-control" placeholder="Password">
+                    <ValidationMessage For="@(()=> user.Password)" />
+                </div>
+
+                <!-- Link to login page -->
+                <div class="mt-2 text-end">
+                    <NavLink class="nav-link" href="/">
+                        <span>Already have an account?</span>
+                    </NavLink>
+                </div>
+
+                <!-- Register button -->
+                <div class="text-center mt-2">
+                    <button class="btn btn-primary" type="submit">Register</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    Users user = new(); // Initialize Users object for registration
+
+    // Method to handle user registration
+    public void Registre()
+    {
+        userService.AddUser(user); // Add user to the user service
+        navigationManager.NavigateTo("/"); // Navigate back to the login page
+    }
+}

@@ -1,0 +1,55 @@
+﻿@page "/counter"
+@using LibrarySystem.Models
+@inject LibrarySystem.Models.BorrowService borrowService
+
+<style>
+    body {
+        background-color: lightgray; /* Set background color to skyblue */
+        color: black; /* Set text color to white for better visibility */
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="text-center">Borrowed Books</h1>
+
+            <!-- Display table of borrowed books -->
+            <table class="table" style="border-collapse: separate; border-spacing: 10px;">
+                <thead>
+                    <tr>
+                        <th style="padding: 8px">Title</th>
+                        <th style="padding: 8px">Loan Date</th>
+                        <th style="padding: 8px">Expected Return Date</th>
+                        <th style="padding: 8px">Return</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Loop through borrowed books and display their information -->
+                    @foreach (var borrow in borrowService.BorrowedList)
+                    {
+                        <tr>
+                            <td style="padding: 8px">@borrow.BorrowedBook.Title</td>
+                            <td style="padding: 8px">@borrow.LoanDate.ToShortDateString()</td>
+                            <td style="padding: 8px">@borrow.ExpectedReturnDate.ToShortDateString()</td>
+                            <td style="padding: 8px">
+                                <!-- Checkbox to mark book as returned -->
+                                <input type="checkbox" id="return_@borrow.BorrowedBook.Id" @onchange="() => ReturnBook(borrow)" />
+                                <label for="return_@borrow.BorrowedBook.Id">Return</label>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Method to handle book return
+    private void ReturnBook(Borrow borrow)
+    {
+        // Remove the borrowed book from the BorrowedList
+        borrowService.BorrowedList.Remove(borrow);
+    }
+}

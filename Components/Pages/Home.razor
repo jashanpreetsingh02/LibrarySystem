@@ -1,0 +1,260 @@
+﻿@page "/dashboard"
+@using LibrarySystem.Models
+@inject LibrarySystem.Models.UserService userService
+@inject Microsoft.Extensions.Logging.ILogger<LibrarySystem.Components.Pages.Home> logger
+@inject LibrarySystem.Models.BorrowService borrowService
+@inject IJSRuntime JSRuntime // Inject IJSRuntime
+@using Microsoft.JSInterop
+
+<style>
+    body {
+        background-image: url('books.jpeg'); /* Set the background image */
+        background-size: cover; /* Cover the entire background */
+        color: black; /* Set text color to white for better visibility */
+    }
+
+    table {
+        color: black; /* Set table text color to black for better visibility */
+    }
+</style>
+
+<marquee><h1>Welcome to the Library</h1></marquee>
+
+<!-- Input field for entering book code -->
+<div>
+    <input type="text" @bind-value="bookCode" placeholder="Enter Book Code">
+    <button @onclick="GetBookDetails">Get Book Details</button>
+</div>
+
+<!-- Display borrowed books -->
+@if (borrowedBook != null)
+{
+    <div>
+        <h2>Borrowed Book Details</h2>
+        <p>ID: @borrowedBook.Id</p>
+        <p>Title: @borrowedBook.Title</p>
+        <p>Author: @borrowedBook.Authors</p>
+        <p>ISBN: @borrowedBook.ISBN</p>
+        <p>Genre: @borrowedBook.Genre</p>
+        <p>Publisher: @borrowedBook.Publisher</p>
+        <p>Publication Year: @borrowedBook.PublicationYear</p>
+    </div>
+}
+
+<!-- Display the list of books -->
+@if (books != null)
+{
+    <table style="border-collapse: separate; border-spacing: 10px;">
+        <caption style="caption-side: top; text-align: left; font-weight: bold; font-size: 18px;">Books</caption>
+        <thead>
+            <tr>
+                <th style="padding: 8px">ID</th>
+                <th style="padding: 8px">Title</th>
+                <th style="padding: 8px">Author</th>
+                <th style="padding: 8px">ISBN</th>
+                <th style="padding: 8px">Genre</th>
+                <th style="padding: 8px">Publisher</th>
+                <th style="padding: 8px">PublicationYear</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in books)
+            {
+                <tr>
+                    <td style="padding: 8px">@book.Id</td>
+                    <td style="padding: 8px">@book.Title</td>
+                    <td style="padding: 8px">@book.Authors</td>
+                    <td style="padding: 8px">@book.ISBN</td>
+                    <td style="padding: 8px">@book.Genre</td>
+                    <td style="padding: 8px">@book.Publisher</td>
+                    <td style="padding: 8px">@book.PublicationYear</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<!-- Search input and button -->
+<div>
+    <input type="text" @bind-value="searchTerm" placeholder="Search...">
+    <button @onclick="Search">Search</button>
+</div>
+
+<!-- Display the list of filtered books -->
+@if (filteredBooks != null)
+{
+    <table style="border-collapse: separate; border-spacing: 10px;">
+        <caption style="caption-side: top; text-align: left; font-weight: bold; font-size: 18px;">Found Book</caption>
+        <thead>
+            <tr>
+                <th style="padding: 8px">ID</th>
+                <th style="padding: 8px">Title</th>
+                <th style="padding: 8px">Author</th>
+                <th style="padding: 8px">ISBN</th>
+                <th style="padding: 8px">Genre</th>
+                <th style="padding: 8px">Publisher</th>
+                <th style="padding: 8px">PublicationYear</th>
+                <th style="padding: 8px">Select</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in filteredBooks)
+            {
+                <tr>
+                    <td style="padding: 8px">@book.Id</td>
+                    <td style="padding: 8px">@book.Title</td>
+                    <td style="padding: 8px">@book.Authors</td>
+                    <td style="padding: 8px">@book.ISBN</td>
+                    <td style="padding: 8px">@book.Genre</td>
+                    <td style="padding: 8px">@book.Publisher</td>
+                    <td style="padding: 8px">@book.PublicationYear</td>
+                    <td style="padding: 8px">
+                        <input type="checkbox" id="@book.Id" name="selectedBooks" value="@book.Id"
+                               checked="@selectedBooks.Contains(book)"
+                               @onchange="() => SelectBook(book)">
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Button to borrow selected books -->
+    <button @onclick="BorrowSelectedBooks">Borrow</button>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p>@errorMessage</p>
+    }
+}
+
+@code {
+    // List of all books
+    List<Book> books;
+
+    // List of filtered books
+    List<Book> filteredBooks;
+
+    // Error message
+    private string errorMessage = "";
+
+    // Search term
+    string searchTerm = "";
+
+    // Book code input field value
+    string bookCode = "";
+
+    // Borrowed book details
+    Book borrowedBook;
+
+    // Method called when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize the list of books
+        books = new List<Book>();
+
+        // Read books from the database
+        await ReadBooks();
+    }
+
+    // Method to read books from the database
+    private async Task ReadBooks()
+    {
+       
+        int id1 = 1;
+        string title1 = "Book 1";
+        string author1 = "Author 1";
+        string isbn1 = "123456789";
+        string genre1 = "Fiction";
+        string publisher1 = "Publisher 1";
+        int publicationYear1 = 2020;
+        Book book1 = new Book(id1, title1, author1, isbn1, genre1, publisher1, publicationYear1);
+        books.Add(book1);
+
+        int id2 = 2;
+        string title2 = "Book 2";
+        string author2 = "Author 2";
+        string isbn2 = "987654321";
+        string genre2 = "Non-Fiction";
+        string publisher2 = "Publisher 2";
+        int publicationYear2 = 2019;
+        Book book2 = new Book(id2, title2, author2, isbn2, genre2, publisher2, publicationYear2);
+        books.Add(book2);
+    }
+
+    // Method to perform search
+    private void Search()
+    {
+        // Filter books based on search term
+        filteredBooks = books.Where(b =>
+            b.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            b.Authors.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            b.ISBN.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            b.Genre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            b.Publisher.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            b.PublicationYear.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+
+        // Filter out borrowed books
+        filteredBooks = IsBookBorrowed(filteredBooks);
+    }
+
+    // Method to filter out borrowed books
+    private List<Book> IsBookBorrowed(List<Book> booksToFilter)
+    {
+        // Get the list of borrowed book titles
+        var borrowedTitles = borrowService.BorrowedList.Select(borrow => borrow.BorrowedBook.Title).ToList();
+
+        // Filter out borrowed books from the list
+        return booksToFilter.Where(book => !borrowedTitles.Contains(book.Title)).ToList();
+    }
+
+    // Method to select/deselect a book
+    private void SelectBook(Book book)
+    {
+        if (!selectedBooks.Contains(book))
+        {
+            selectedBooks.Add(book);
+        }
+        else
+        {
+            selectedBooks.Remove(book);
+        }
+    }
+
+    // List of selected books
+    private List<Book> selectedBooks = new List<Book>();
+
+    // Method to borrow selected books
+    private async Task BorrowSelectedBooks()
+    {
+        if (selectedBooks.Any())
+        {
+            foreach (var book in selectedBooks)
+            {
+                // Create a borrow object and add it to the borrow service
+                Borrow borrow = new Borrow(book, DateTime.Now, DateTime.Now.AddDays(14));
+                borrowService.AddBorrow(borrow);
+            }
+
+            // Clear the list of selected books
+            selectedBooks.Clear();
+
+            // Show a pop-up message indicating successful borrowing
+            await JSRuntime.InvokeVoidAsync("alert", "Books borrowed successfully!");
+        }
+        else
+        {
+            // Display an error message if no book is selected for borrowing
+            errorMessage = "Error: No book selected.";
+        }
+    }
+
+    // Method to get book details
+    private void GetBookDetails()
+    {
+        // Find the book by code
+        borrowedBook = books.FirstOrDefault(b => b.Id.ToString() == bookCode);
+
+        // Reset book code input field
+        bookCode = "";
+    }
+}
